@@ -5,14 +5,18 @@ defmodule Crudex.CrudController do
   defmacro __using__(_) do
     quote do
       use Phoenix.Controller
-      import Crudex.CrudController, only: [crud_for: 1, crud_for: 2, defcrud: 2, send_error: 3]      
+      import Crudex.CrudController, only: [crud_for: 1, crud_for: 2, defcrud: 2, send_error: 3]  
+      @user_scoped false    
     end
   end
 
   defmacro defcrud(module, action) do
     implementation = String.to_existing_atom("do_#{action}")
+
     quote do
-      def unquote(action)(conn, params), do: apply(Crudex.CrudController, unquote(implementation), [conn, @ecto_repo, unquote(module), params])
+      def unquote(action)(conn, params) do 
+        apply(Crudex.CrudController, unquote(implementation), [conn, @ecto_repo, unquote(module), @user_scoped, params])
+      end
     end
   end
 
@@ -20,12 +24,12 @@ defmodule Crudex.CrudController do
     for action <- actions, do: quote do: defcrud(unquote(module), unquote(action))
   end
 
-  def do_index(conn, repo, module, _) do
-    json conn, repo.all(module)
+  def do_index(conn, repo, module, user_scoped, _) do
+    json conn, module |> apply_scope(conn, user_scoped) |> repo.all
   end
 
-  def do_create(conn, repo, module, %{"data" => data}) do
-    data = module.decode(data)
+  def do_create(conn, repo, module, user_scoped, %{"data" => data}) do
+    data = data |> module.decode |> add_user_id(conn, user_scoped)
 
     case module.validate(data) do
       nil -> data |> repo.insert |> send_data(conn)
@@ -33,36 +37,30 @@ defmodule Crudex.CrudController do
     end
   end
 
-  def do_show(conn, repo, module, %{"id" => data_id}) do
+  def do_show(conn, repo, module, user_scoped, %{"id" => data_id}) do
     assocs = module.__schema__(:associations) |> Enum.filter(&filter_assoc(&1, module))
     decoded_id = Crudex.Model.decoded_binary(data_id)
 
-    case repo.one from(r in module, where: r.id == ^decoded_id, preload: ^assocs) do
+    case from(r in module, where: r.id == ^decoded_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
       data -> send_data(data, conn)
     end 
   end
 
-  def do_update(conn, repo, module, %{"id" => data_id, "data" => updated_fields}) do
-    if data = repo.get(module, Crudex.Model.decoded_binary(data_id)) do
-      data = struct(data, Crudex.Model.convert_keys_to_atoms(updated_fields))
-      case module.validate(data) do
-        nil -> data |> repo.update |> send_data(conn)
-        errors -> send_error(conn, :bad_request, errors)
-      end
-    else
-      send_error(conn, :not_found, %{message: "not found"})
+  def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) do
+    decoded_id = Crudex.Model.decoded_binary(data_id)
+    sanitized_fields = updated_fields |> Crudex.Model.convert_keys_to_atoms |> sanitize(user_scoped)
+    case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.one do
+      nil -> send_error(conn, :not_found, %{message: "not found"})
+      data -> data |> struct(sanitized_fields) |> _update_data(conn, repo, module)
     end
   end
 
-  def do_destroy(conn, repo, module, %{"id" => data_id}) do
+  def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
-    result = repo.delete_all from(r in module, where: r.id == ^decoded_id)
-
-    if result == 1 do
-      json conn, :ok
-    else
-      send_error(conn, :not_found, %{message: "not found"})
+    case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
+      1 -> json conn, :ok
+      0 -> send_error(conn, :not_found, %{message: "not found"})
     end
   end
 
@@ -76,7 +74,29 @@ defmodule Crudex.CrudController do
     json conn, %{data: data}
   end 
 
+  defp _update_data(data, conn, repo, module) do
+    case module.validate(data) do
+      nil -> data |> repo.update |> send_data(conn)
+      errors -> send_error(conn, :bad_request, errors)
+    end    
+  end
+
+  defp sanitize(data, user_scoped), do: data |> Map.delete(:id) |> delete_user_info(user_scoped)
+  defp delete_user_info(data, true), do: Map.delete(data, :user_id)
+  defp delete_user_info(data, false), do: data
+
   defp filter_assoc(field, module) do
     module.__schema__(:association, field).__struct__ != Ecto.Associations.BelongsTo
+  end
+
+  defp get_user_id(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id)
+
+  defp add_user_id(data, conn, true), do: Map.put(data, :user_id, get_user_id(conn))
+  defp add_user_id(data, _conn, false), do: data
+
+  defp apply_scope(query, _conn, false), do: query
+  defp apply_scope(query, conn, true) do
+    user_id = get_user_id(conn)
+    from(r in query, where: r.user_id == ^user_id)
   end
 end
