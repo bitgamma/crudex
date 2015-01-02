@@ -37,7 +37,7 @@ defmodule Crudex.CrudController do
     end
   end
 
-  def do_show(conn, repo, module, user_scoped, %{"id" => data_id}) do
+  def do_show(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     assocs = module.__schema__(:associations) |> Enum.filter(&filter_assoc(&1, module))
     decoded_id = Crudex.Model.decoded_binary(data_id)
 
@@ -46,8 +46,9 @@ defmodule Crudex.CrudController do
       data -> send_data(data, conn)
     end 
   end
+  def do_show(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
-  def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) do
+  def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
     sanitized_fields = updated_fields |> Crudex.Model.convert_keys_to_atoms |> sanitize(user_scoped)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.one do
@@ -55,14 +56,16 @@ defmodule Crudex.CrudController do
       data -> data |> struct(sanitized_fields) |> _update_data(conn, repo, module)
     end
   end
+  def do_update(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
-  def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) do
+  def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
       1 -> json conn, :ok
       0 -> send_error(conn, :not_found, %{message: "not found"})
     end
   end
+  def do_destroy(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
   def send_error(conn, status, errors) do
     conn
@@ -89,7 +92,7 @@ defmodule Crudex.CrudController do
     module.__schema__(:association, field).__struct__ != Ecto.Associations.BelongsTo
   end
 
-  defp get_user_id(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id)
+  defp get_user_id(conn), do: conn.assigns[:authenticated_user] |> Map.get(:id)
 
   defp add_user_id(data, conn, true), do: Map.put(data, :user_id, get_user_id(conn))
   defp add_user_id(data, _conn, false), do: data
