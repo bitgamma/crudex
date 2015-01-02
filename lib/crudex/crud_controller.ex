@@ -36,6 +36,7 @@ defmodule Crudex.CrudController do
       errors -> send_error(conn, :bad_request, errors)
     end
   end
+  def do_create(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :bad_request, %{message: "bad request"})
 
   def do_show(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     assocs = module.__schema__(:associations) |> Enum.filter(&filter_assoc(&1, module))
@@ -56,7 +57,8 @@ defmodule Crudex.CrudController do
       data -> data |> struct(sanitized_fields) |> _update_data(conn, repo, module)
     end
   end
-  def do_update(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
+  def do_update(conn, _repo, _module, _user_scoped, %{"data" => _updated_fields}), do: send_error(conn, :not_found, %{message: "not found"})
+  def do_update(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :bad_request, %{message: "bad request"})
 
   def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
