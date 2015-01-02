@@ -92,7 +92,7 @@ defmodule Crudex.CrudController do
     module.__schema__(:association, field).__struct__ != Ecto.Associations.BelongsTo
   end
 
-  defp get_user_id(conn), do: conn.assigns[:authenticated_user] |> Map.get(:id)
+  defp get_user_id(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id)
 
   defp add_user_id(data, conn, true), do: Map.put(data, :user_id, get_user_id(conn))
   defp add_user_id(data, _conn, false), do: data
