@@ -4,12 +4,24 @@ defmodule Crudex.Model do
   defmacro __using__(_) do
     quote do
       use Ecto.Model
+      import Crudex.Model, only: [crudex_schema: 2]
 
       defimpl Poison.Encoder, for: __MODULE__ do
         def encode(model, options), do: Crudex.Model.encode(model, @for) |> Poison.Encoder.Map.encode(options)
       end
 
       def decode(model), do: Crudex.Model.decode(model, __MODULE__)
+    end
+  end
+
+  defmacro crudex_schema(schema_name, do: block) do
+    quote do
+      @schema_defaults primary_key: {:id, :uuid, []}, foreign_key_type: :uuid
+      schema unquote(schema_name) do
+        unquote(block)
+        field :created_at, :datetime, default: Ecto.DateTime.utc
+        field :updated_at, :datetime, default: Ecto.DateTime.utc
+      end
     end
   end
 
