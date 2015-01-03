@@ -49,13 +49,14 @@ defmodule Crudex.Model do
   end
 
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
+  
+  defp encode_field(_, nil), do: nil
   defp encode_field(:datetime, field_val) do
     field_val
     |> Ecto.DateTime.to_erl
     |> Timex.Date.from
     |> Timex.DateFormat.format!("{ISOz}")
   end
-  defp encode_field(_, nil), do: nil
   defp encode_field(:uuid, field_val), do: encoded_binary(field_val)
   defp encode_field(:binary, field_val), do: encoded_binary(field_val)
   defp encode_field(_type, field_val), do: field_val
@@ -79,10 +80,10 @@ defmodule Crudex.Model do
 
   defp decode_fields(model, module), do: reduce_on_existing_fields(model, module, &decode_field/2)
 
+  defp decode_field(_, nil), do: nil
   defp decode_field(:datetime, field_val) do
     field_val |> Timex.DateFormat.parse!("{ISOz}") |> Timex.Date.Convert.to_erlang_datetime |> Ecto.DateTime.from_erl 
   end
-  defp decode_field(_, nil), do: nil
   defp decode_field(:uuid, field_val), do: decoded_binary(field_val)
   defp decode_field(:binary, field_val), do: decoded_binary(field_val)
   defp decode_field(_type, field_val), do: field_val
