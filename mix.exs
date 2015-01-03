@@ -25,6 +25,11 @@ defmodule Crudex.Mixfile do
   #
   # Type `mix help deps` for more examples and options
   defp deps do
-    []
+    [
+      {:phoenix, github: "phoenixframework/phoenix"},
+      {:ecto, github: "elixir-lang/ecto"},
+      {:timex, "~> 0.13.2"},
+      {:plug_auth, ">= 0.0.0"},
+    ]
   end
 end
