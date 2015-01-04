@@ -49,6 +49,7 @@ defmodule Crudex.UserController do
   def do_sign_in(false, conn, _user), do: Crudex.CrudController.send_error(conn, :unauthorized, %{message: "unauthorized"})
 
   def get_user_id(%Plug.Conn{assigns: %{authenticated_user: %{role: "admin"}}}, %{"id" => data_id}), do: data_id
+  def get_user_id(conn, %{"id" => "current"}), do: get_authenticated_user(conn)
   def get_user_id(conn, %{"id" => data_id}) do
     case get_authenticated_user(conn) do
       ^data_id -> data_id
