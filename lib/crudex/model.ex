@@ -16,7 +16,8 @@ defmodule Crudex.Model do
 
   defmacro crudex_schema(schema_name, do: block) do
     quote do
-      @schema_defaults primary_key: {:id, :uuid, []}, foreign_key_type: :uuid
+      @primary_key {:id, :uuid, []}
+      @foreign_key_type :uuid
       schema unquote(schema_name) do
         unquote(block)
         field :created_at, :datetime, default: Ecto.DateTime.utc
