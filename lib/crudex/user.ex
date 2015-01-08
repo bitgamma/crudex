@@ -9,7 +9,7 @@ defmodule Crudex.User do
     field :role, :string
   end
 
-  validate recipe,
+  validate user,
     email: present(message: "must be present"),
     salt: present(message: "must be present"),
     password: present(message: "must be present"),
