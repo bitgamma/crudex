@@ -63,7 +63,7 @@ defmodule Crudex.CrudController do
   def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
-      1 -> json conn, :ok
+      1 -> json conn, %{status: "ok"}
       0 -> send_error(conn, :not_found, %{message: "not found"})
     end
   end
