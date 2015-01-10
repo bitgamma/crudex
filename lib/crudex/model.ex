@@ -62,7 +62,7 @@ defmodule Crudex.Model do
   defp encode_field(:binary, field_val), do: encoded_binary(field_val)
   defp encode_field(_type, field_val), do: field_val
 
-  defp fetch_association(%Ecto.Associations.NotLoaded{}), do: %{loaded: false}
+  defp fetch_association(%Ecto.Associations.NotLoaded{}), do: nil
   defp fetch_association(assoc), do: assoc
 
   defp _decode(model, module) do
