@@ -79,7 +79,7 @@ defmodule Crudex.Model do
   defp convert_key(k) when is_atom(k), do: k
   defp convert_key(k) when is_binary(k), do: String.to_existing_atom(k)
 
-  defp decode_fields(model, module), do: reduce_on_existing_fields(model, module, &decode_field/2)
+  def decode_fields(model, module), do: reduce_on_existing_fields(model, module, &decode_field/2)
 
   defp decode_field(_, nil), do: nil
   defp decode_field(:datetime, field_val) do

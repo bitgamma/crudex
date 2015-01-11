@@ -26,12 +26,12 @@ defmodule Crudex.UserController do
       end
 
       def create(conn, %{"data" => user}) do
-        Crudex.CrudController.do_create(conn, @ecto_repo, Crudex.User, false, %{"data" => Crudex.UserController.convert_user_data(user)})
+        Crudex.CrudController.do_create(conn, @ecto_repo, Crudex.User, false, %{"data" => Crudex.UserController.convert_user_data(user, conn)})
       end
 
       def update(conn, params = %{"data" => user}) do
         data_id = Crudex.UserController.get_user_id(conn, params)
-        Crudex.CrudController.do_update(conn, @ecto_repo, Crudex.User, false, %{"id" => data_id, "data" => Crudex.UserController.convert_user_data(user)})
+        Crudex.CrudController.do_update(conn, @ecto_repo, Crudex.User, false, %{"id" => data_id, "data" => Crudex.UserController.convert_user_data(user, conn)})
       end
 
       def show(conn, params) do
@@ -63,10 +63,14 @@ defmodule Crudex.UserController do
     |> Plug.Crypto.secure_compare(key)
   end
 
-  def convert_user_data(user) do
+  def convert_user_data(user, conn) do
     Dict.pop(user, "password")
     |> password_to_key
+    |> sanitize_role(conn)
   end
+
+  defp sanitize_role(user, %Plug.Conn{assigns: %{authenticated_user: %{role: "admin"}}}), do: user
+  defp sanitize_role(user, _conn), do: Dict.delete(user, "role")
 
   defp password_to_key({nil, user}), do: user
   defp password_to_key({pass, user}) do

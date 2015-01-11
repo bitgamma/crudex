@@ -51,7 +51,7 @@ defmodule Crudex.CrudController do
 
   def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
-    sanitized_fields = updated_fields |> Crudex.Model.convert_keys_to_atoms |> sanitize(user_scoped)
+    sanitized_fields = updated_fields |> Crudex.Model.convert_keys_to_atoms |> Crudex.Model.decode_fields(module) |> sanitize(user_scoped)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
       data -> data |> struct(sanitized_fields) |> _update_data(conn, repo, module)
