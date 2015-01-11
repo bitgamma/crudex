@@ -9,19 +9,17 @@ defmodule Crudex.Model do
       defimpl Poison.Encoder, for: __MODULE__ do
         def encode(model, options), do: Crudex.Model.encode(model, @for) |> Poison.Encoder.Map.encode(options)
       end
-
-      def decode(model), do: Crudex.Model.decode(model, __MODULE__)
     end
   end
 
   defmacro crudex_schema(schema_name, do: block) do
     quote do
-      @primary_key {:id, :uuid, []}
-      @foreign_key_type :uuid
+      @primary_key {:id, Crudex.JSONUUID, []}
+      @foreign_key_type Crudex.JSONUUID
       schema unquote(schema_name) do
         unquote(block)
-        field :created_at, :datetime, default: Ecto.DateTime.utc
-        field :updated_at, :datetime, default: Ecto.DateTime.utc
+        field :created_at, Crudex.JSONDateTime, default: Timex.Date.universal
+        field :updated_at, Crudex.JSONDateTime, default: Timex.Date.universal
       end
     end
   end
@@ -37,10 +35,6 @@ defmodule Crudex.Model do
     |> encode_fields(module)
   end
 
-  def decode(model, module) do
-    struct(module, _decode(model, module))
-  end
-
   ## Implementation
   defp encode_model_associations(model, module) do
     reduce_on_associations(model, module, fn field, model ->
@@ -52,46 +46,13 @@ defmodule Crudex.Model do
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
   
   defp encode_field(_, nil), do: nil
-  defp encode_field(:datetime, field_val) do
-    field_val
-    |> Ecto.DateTime.to_erl
-    |> Timex.Date.from
-    |> Timex.DateFormat.format!("{ISOz}")
-  end
-  defp encode_field(:uuid, field_val), do: encoded_binary(field_val)
-  defp encode_field(:binary, field_val), do: encoded_binary(field_val)
+  defp encode_field(Crudex.JSONDateTime, field_val), do: Timex.DateFormat.format!(field_val, "{ISOz}")
+  defp encode_field(Crudex.JSONUUID, field_val), do: encoded_binary(field_val)
+  defp encode_field(Crudex.JSONBinary, field_val), do: encoded_binary(field_val)
   defp encode_field(_type, field_val), do: field_val
 
   defp fetch_association(%Ecto.Associations.NotLoaded{}), do: nil
   defp fetch_association(assoc), do: assoc
-
-  defp _decode(model, module) do
-    model
-    |> convert_keys_to_atoms
-    |> decode_model_associations(module)
-    |> decode_fields(module)
-  end
-
-  def convert_keys_to_atoms(model) do
-    for {k, v} <- model, do: {convert_key(k), v}, into: Map.new
-  end
-
-  defp convert_key(k) when is_atom(k), do: k
-  defp convert_key(k) when is_binary(k), do: String.to_existing_atom(k)
-
-  def decode_fields(model, module), do: reduce_on_existing_fields(model, module, &decode_field/2)
-
-  defp decode_field(_, nil), do: nil
-  defp decode_field(:datetime, field_val) do
-    field_val |> Timex.DateFormat.parse!("{ISOz}") |> Timex.Date.Convert.to_erlang_datetime |> Ecto.DateTime.from_erl 
-  end
-  defp decode_field(:uuid, field_val), do: decoded_binary(field_val)
-  defp decode_field(:binary, field_val), do: decoded_binary(field_val)
-  defp decode_field(_type, field_val), do: field_val
-
-  defp decode_model_associations(model, module) do
-    reduce_on_associations(model, module, &Dict.delete(&2, &1))
-  end
 
   ## Utils
   defp reduce_on_associations(model, module, fun), do: Enum.reduce(module.__schema__(:associations), model, fun)

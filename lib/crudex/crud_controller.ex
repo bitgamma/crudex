@@ -29,11 +29,11 @@ defmodule Crudex.CrudController do
   end
 
   def do_create(conn, repo, module, user_scoped, %{"data" => data}) do
-    data = data |> module.decode |> add_user_id(conn, user_scoped)
+    changeset = module.changeset(struct(module), add_user_id(data, conn, user_scoped))
 
-    case module.validate(data) do
-      nil -> data |> repo.insert |> send_data(conn)
-      errors -> send_error(conn, :bad_request, errors)
+    case changeset.valid? do
+      true -> changeset |> repo.insert |> send_data(conn)
+      false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end
   end
   def do_create(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :bad_request, %{message: "bad request"})
@@ -51,10 +51,10 @@ defmodule Crudex.CrudController do
 
   def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) when not is_nil(data_id) do
     decoded_id = Crudex.Model.decoded_binary(data_id)
-    sanitized_fields = updated_fields |> Crudex.Model.convert_keys_to_atoms |> Crudex.Model.decode_fields(module) |> sanitize(user_scoped)
+    sanitized_fields = sanitize(updated_fields, user_scoped)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
-      data -> data |> struct(sanitized_fields) |> _update_data(conn, repo, module)
+      data -> data |> module.changeset(sanitized_fields) |> _update_data(conn, repo)
     end
   end
   def do_update(conn, _repo, _module, _user_scoped, %{"data" => _updated_fields}), do: send_error(conn, :not_found, %{message: "not found"})
@@ -79,15 +79,15 @@ defmodule Crudex.CrudController do
     json conn, %{data: data}
   end 
 
-  defp _update_data(data, conn, repo, module) do
-    case module.validate(data) do
-      nil -> data |> repo.update |> send_data(conn)
-      errors -> send_error(conn, :bad_request, errors)
+  defp _update_data(changeset, conn, repo) do
+    case changeset.valid? do
+      true -> changeset |> repo.update |> send_data(conn)
+      false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end    
   end
 
-  defp sanitize(data, user_scoped), do: data |> Map.delete(:id) |> delete_user_info(user_scoped)
-  defp delete_user_info(data, true), do: Map.delete(data, :user_id)
+  defp sanitize(data, user_scoped), do: data |> Map.delete("id") |> delete_user_info(user_scoped)
+  defp delete_user_info(data, true), do: Map.delete(data, "user_id")
   defp delete_user_info(data, false), do: data
 
   defp filter_assoc(field, module) do
@@ -96,7 +96,7 @@ defmodule Crudex.CrudController do
 
   defp get_user_id(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id)
 
-  defp add_user_id(data, conn, true), do: Map.put(data, :user_id, get_user_id(conn))
+  defp add_user_id(data, conn, true), do: Map.put(data, "user_id", get_user_id(conn))
   defp add_user_id(data, _conn, false), do: data
 
   defp apply_scope(query, _conn, false), do: query
@@ -104,4 +104,6 @@ defmodule Crudex.CrudController do
     user_id = get_user_id(conn)
     from(r in query, where: r.user_id == ^user_id)
   end
+
+  defp format_errors(errors), do: Enum.into(errors, Map.new)
 end
