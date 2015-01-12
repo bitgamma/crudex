@@ -9,6 +9,15 @@ defmodule Crudex.JSONBinary do
   end
   def cast(_), do: :error
 
+  def cast!(val) do
+    case cast(val) do
+      {:ok, uuid} -> uuid
+      :error -> raise "Invalid binary format"
+    end
+  end
+
+  def encode(binary) when is_binary(binary), do: Base.url_encode64(binary)
+
   def blank?(nil), do: true
   def blank?(<<>>), do: true
   def blank?(_), do: false

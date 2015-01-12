@@ -77,8 +77,8 @@ defmodule Crudex.UserController do
     {salt, key} = generate_key(pass)
 
     user
-    |> Dict.put("salt", Crudex.Model.encoded_binary(salt))
-    |> Dict.put("password", Crudex.Model.encoded_binary(key))
+    |> Dict.put("salt", Crudex.JSONBinary.encode(salt))
+    |> Dict.put("password", Crudex.JSONBinary.encode(key))
   end
 
   defp generate_key(password) do
@@ -86,5 +86,5 @@ defmodule Crudex.UserController do
     {salt, Plug.Crypto.KeyGenerator.generate(password, salt)}
   end
 
-  defp get_authenticated_user(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id) |> Crudex.Model.encoded_binary
+  defp get_authenticated_user(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id) |> Crudex.JSONUUID.encode
 end

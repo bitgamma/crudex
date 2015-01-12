@@ -25,9 +25,6 @@ defmodule Crudex.Model do
   end
 
   ## Public API
-  def encoded_binary(id), do: Base.url_encode64(id)
-  def decoded_binary(id), do: Base.url_decode64!(id)
-
   def encode(model, module) do
     model
     |> Map.from_struct
@@ -47,8 +44,8 @@ defmodule Crudex.Model do
   
   defp encode_field(_, nil), do: nil
   defp encode_field(Crudex.JSONDateTime, field_val), do: Timex.DateFormat.format!(field_val, "{ISOz}")
-  defp encode_field(Crudex.JSONUUID, field_val), do: encoded_binary(field_val)
-  defp encode_field(Crudex.JSONBinary, field_val), do: encoded_binary(field_val)
+  defp encode_field(Crudex.JSONUUID, field_val), do: Crudex.JSONUUID.encode(field_val)
+  defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val
 
   defp fetch_association(%Ecto.Associations.NotLoaded{}), do: nil
