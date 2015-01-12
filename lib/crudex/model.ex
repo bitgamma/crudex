@@ -43,7 +43,7 @@ defmodule Crudex.Model do
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
   
   defp encode_field(_, nil), do: nil
-  defp encode_field(Crudex.JSONDateTime, field_val), do: Timex.DateFormat.format!(field_val, "{ISOz}")
+  defp encode_field(Crudex.JSONDateTime, field_val), do: Crudex.JSONDateTime.encode(field_val)
   defp encode_field(Crudex.JSONUUID, field_val), do: Crudex.JSONUUID.encode(field_val)
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val

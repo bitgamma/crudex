@@ -5,6 +5,15 @@ defmodule Crudex.JSONDateTime do
   def cast(%Timex.DateTime{} = dt), do: {:ok, dt}
   def cast(_), do: :error
 
+  def cast!(val) do
+    case cast(val) do
+      {:ok, date} -> date
+      :error -> raise "Invalid date format"
+    end
+  end
+
+  def encode(%Timex.DateTime{} = dt), do: Timex.DateFormat.format!(dt, "{ISOz}")
+
   def blank?(nil), do: true
   def blank?(_), do: false
 
