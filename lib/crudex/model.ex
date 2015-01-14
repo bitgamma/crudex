@@ -4,7 +4,9 @@ defmodule Crudex.Model do
   defmacro __using__(_) do
     quote do
       use Ecto.Model
-      import Crudex.Model, only: [crudex_schema: 2]
+      import Crudex.Model, only: [crudex_schema: 2, virtual_field: 2]
+
+      Module.register_attribute __MODULE__, :crudex_virtuals, accumulate: true, persist: false
 
       defimpl Poison.Encoder, for: __MODULE__ do
         def encode(model, options), do: Crudex.Model.encode(model, @for) |> Poison.Encoder.Map.encode(options)
@@ -21,6 +23,17 @@ defmodule Crudex.Model do
         field :created_at, Crudex.JSONDateTime, default: Timex.Date.universal
         field :updated_at, Crudex.JSONDateTime, default: Timex.Date.universal
       end
+
+      def __crudex_virtuals__(:fields) do
+        @crudex_virtuals
+      end
+    end
+  end
+
+  defmacro virtual_field(name, type) do
+    quote do
+      Module.put_attribute __MODULE__, :crudex_virtuals, {unquote(name), unquote(type)}
+      field unquote(name), unquote(type), virtual: true
     end
   end
 
@@ -53,11 +66,11 @@ defmodule Crudex.Model do
 
   ## Utils
   defp reduce_on_associations(model, module, fun), do: Enum.reduce(module.__schema__(:associations), model, fun)
-  defp reduce_on_fields(model, module, fun), do: Enum.reduce(module.__schema__(:fields), model, fun)
-  defp reduce_on_existing_fields(model, module, fun), do: reduce_on_fields(model, module, &apply_on_existing_field(&1, &2, module, fun))
-  defp apply_on_existing_field(field, model, module, fun) do
+  defp reduce_on_fields(model, module, fun), do: Enum.reduce(module.__changeset__, model, fun)
+  defp reduce_on_existing_fields(model, module, fun), do: reduce_on_fields(model, module, &apply_on_existing_field(&1, &2, fun))
+  defp apply_on_existing_field({field, type}, model, fun) do
     if Dict.has_key?(model, field) do
-      decoded_field = fun.(module.__schema__(:field, field), model[field])
+      decoded_field = fun.(type, model[field])
       Dict.put(model, field, decoded_field)
     else
       model

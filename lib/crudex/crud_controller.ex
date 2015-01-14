@@ -25,7 +25,7 @@ defmodule Crudex.CrudController do
   end
 
   def do_index(conn, repo, module, user_scoped, _) do
-    json conn, module |> apply_scope(conn, user_scoped) |> repo.all
+    json conn, module |> apply_scope(conn, user_scoped) |> repo.all |> resolve_all_virtuals(module)
   end
 
   def do_create(conn, repo, module, user_scoped, %{"data" => data}) do
@@ -44,7 +44,7 @@ defmodule Crudex.CrudController do
 
     case from(r in module, where: r.id == ^decoded_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
-      data -> send_data(data, conn)
+      data -> data |> resolve_virtuals(module) |> send_data(conn)
     end 
   end
   def do_show(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
@@ -71,7 +71,7 @@ defmodule Crudex.CrudController do
 
   def send_error(conn, status, errors) do
     conn
-    |> put_status(Plug.Conn.Status.code(status))
+    |> put_status(status)
     |> json %{errors: errors}    
   end
 
@@ -104,6 +104,13 @@ defmodule Crudex.CrudController do
     user_id = get_user_id(conn)
     from(r in query, where: r.user_id == ^user_id)
   end
+
+  defp resolve_all_virtuals(models, module) do
+    for model <- models, do: resolve_virtuals(model, module) 
+  end
+
+  defp resolve_virtuals(model, module), do: Enum.reduce(module.__crudex_virtuals__(:fields), model, &resolve_virtual(&1, &2, module))
+  defp resolve_virtual({field, _type}, model, module), do: Map.put(model, field, module.__crudex_virtuals__(:resolve, field, model))
 
   defp format_errors(errors), do: Enum.into(errors, Map.new)
 end
