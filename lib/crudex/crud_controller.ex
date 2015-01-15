@@ -75,6 +75,10 @@ defmodule Crudex.CrudController do
     |> json %{errors: errors}    
   end
 
+  def apply_user_scope(query, conn) do
+    apply_scope(query, conn, true)
+  end
+
   defp send_data(data, conn) do
     json conn, %{data: data}
   end 
