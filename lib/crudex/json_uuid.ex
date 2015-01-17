@@ -1,6 +1,15 @@
 defmodule Crudex.JSONUUID do
   def type, do: :uuid
 
+  def generate do
+    <<u0::48, _::4, u1::12, _::2, u2::62>> = :crypto.strong_rand_bytes(16)
+    <<u0::48, 4::4, u1::12, 2::2, u2::62>>
+  end
+
+  def generate_string do
+    generate |> encode
+  end
+
   def cast(<< u0::64, ?-, u1::32, ?-, u2::32, ?-, u3::32, ?-, u4::96 >>) do
     Base.decode16(<< u0::64, u1::32, u2::32, u3::32, u4::96 >>, case: :mixed)
   end
