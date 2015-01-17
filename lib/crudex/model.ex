@@ -18,10 +18,10 @@ defmodule Crudex.Model do
     quote do
       @primary_key {:id, Crudex.JSONUUID, []}
       @foreign_key_type Crudex.JSONUUID
+      @timestamp_tyoe Crudex.JSONDateTime
       schema unquote(schema_name) do
         unquote(block)
-        field :created_at, Crudex.JSONDateTime, default: Timex.Date.universal
-        field :updated_at, Crudex.JSONDateTime, default: Timex.Date.universal
+        timestamps inserted_at: :created_at
       end
 
       def __crudex_virtuals__(:fields) do
