@@ -18,7 +18,7 @@ defmodule Crudex.Model do
     quote do
       @primary_key {:id, Crudex.JSONUUID, []}
       @foreign_key_type Crudex.JSONUUID
-      @timestamp_type Crudex.JSONDateTime
+      @timestamps_type Crudex.JSONDateTime
       schema unquote(schema_name) do
         unquote(block)
         timestamps inserted_at: :created_at
