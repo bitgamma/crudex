@@ -45,6 +45,22 @@ defmodule Crudex.Model do
     |> encode_fields(module)
   end
 
+  def resolve_virtuals_recursively(model, module, assocs) do
+    model = resolve_virtuals(model, module)
+    Enum.reduce(assocs, model, &resolve_for_association(&1, &2, module))
+  end
+
+  defp resolve_for_association(assoc, model, module) do
+    Map.put(model, assoc, resolve_all_virtuals(Map.get(model, assoc), module))
+  end
+
+  def resolve_all_virtuals(models, module) do
+    for model <- models, do: resolve_virtuals(model, module) 
+  end
+
+  def resolve_virtuals(model, module), do: Enum.reduce(module.__crudex_virtuals__(:fields), model, &resolve_virtual(&1, &2, module))
+  defp resolve_virtual({field, _type}, model, module), do: Map.put(model, field, module.__crudex_virtuals__(:resolve, field, model))
+
   ## Implementation
   defp encode_model_associations(model, module) do
     reduce_on_associations(model, module, fn field, model ->
