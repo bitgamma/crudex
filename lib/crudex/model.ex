@@ -59,7 +59,7 @@ defmodule Crudex.Model do
   end
 
   def filter_hidden(model, module) do
-    Enum.reduce(module.__crudex_hidden___, model, &Map.delete(&2, &1))
+    Enum.reduce(module.__crudex_hidden__, model, &Map.delete(&2, &1))
   end
 
   def resolve_virtuals_recursively(model, module, assocs) do
