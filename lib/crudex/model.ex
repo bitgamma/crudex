@@ -4,7 +4,7 @@ defmodule Crudex.Model do
   defmacro __using__(_) do
     quote do
       use Ecto.Model
-      import Crudex.Model, only: [crudex_schema: 2, virtual_field: 2]
+      import Crudex.Model, only: [crudex_schema: 2, virtual_field: 2, hidden_field: 2]
 
       Module.register_attribute __MODULE__, :crudex_virtuals, accumulate: true, persist: false
       Module.register_attribute __MODULE__, :crudex_hidden, accumulate: true, persist: false
