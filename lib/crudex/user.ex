@@ -4,8 +4,8 @@ defmodule Crudex.User do
   crudex_schema "users" do 
     field :display_name, :string   
     field :email, :string
-    field :salt, Crudex.JSONBinary
-    field :password, Crudex.JSONBinary
+    hidden_field :salt, Crudex.JSONBinary
+    hidden_field :password, Crudex.JSONBinary
     field :role, :string
   end
 

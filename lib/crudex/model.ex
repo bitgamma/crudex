@@ -7,6 +7,7 @@ defmodule Crudex.Model do
       import Crudex.Model, only: [crudex_schema: 2, virtual_field: 2]
 
       Module.register_attribute __MODULE__, :crudex_virtuals, accumulate: true, persist: false
+      Module.register_attribute __MODULE__, :crudex_hidden, accumulate: true, persist: false
 
       defimpl Poison.Encoder, for: __MODULE__ do
         def encode(model, options), do: Crudex.Model.encode(model, @for) |> Poison.Encoder.Map.encode(options)
@@ -27,6 +28,10 @@ defmodule Crudex.Model do
       def __crudex_virtuals__(:fields) do
         @crudex_virtuals
       end
+
+      def __crudex_hidden__ do
+        @crudex_hidden
+      end
     end
   end
 
@@ -37,12 +42,24 @@ defmodule Crudex.Model do
     end
   end
 
+  defmacro hidden_field(name, type) do
+    quote do
+      Module.put_attribute __MODULE__, :crudex_hidden, unquote(name)
+      field unquote(name), unquote(type)
+    end
+  end
+
   ## Public API
   def encode(model, module) do
     model
     |> Map.from_struct
+    |> filter_hidden(module)
     |> encode_model_associations(module)
     |> encode_fields(module)
+  end
+
+  def filter_hidden(model, module) do
+    Enum.reduce(module.__crudex_hidden___, model, &Map.delete(&2, &1))
   end
 
   def resolve_virtuals_recursively(model, module, assocs) do
