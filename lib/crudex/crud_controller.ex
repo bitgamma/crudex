@@ -20,7 +20,7 @@ defmodule Crudex.CrudController do
     end
   end
 
-  defmacro crud_for(module, actions \\ [:index, :create, :show, :update, :destroy]) do
+  defmacro crud_for(module, actions \\ [:index, :create, :show, :update, :delete]) do
     for action <- actions, do: quote do: defcrud(unquote(module), unquote(action))
   end
 
@@ -60,14 +60,14 @@ defmodule Crudex.CrudController do
   def do_update(conn, _repo, _module, _user_scoped, %{"data" => _updated_fields}), do: send_error(conn, :not_found, %{message: "not found"})
   def do_update(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :bad_request, %{message: "bad request"})
 
-  def do_destroy(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
+  def do_delete(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     decoded_id = Crudex.JSONUUID.cast!(data_id)
     case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
       1 -> json conn, %{status: "ok"}
       0 -> send_error(conn, :not_found, %{message: "not found"})
     end
   end
-  def do_destroy(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
+  def do_delete(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
   def send_error(conn, status, errors) do
     conn

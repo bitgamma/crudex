@@ -11,7 +11,7 @@ defmodule Crudex.UserController do
 
   defmacro user_controller() do
     quote do
-      crud_for(Crudex.User, [:index, :destroy])
+      crud_for(Crudex.User, [:index, :delete])
 
       def sign_in(conn, %{"email" => email, "password" => password}) do
         case @ecto_repo.all from(u in Crudex.User, where: u.email == ^email) do
