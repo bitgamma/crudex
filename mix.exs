@@ -5,31 +5,34 @@ defmodule Crudex.Mixfile do
     [app: :crudex,
      version: "0.0.1",
      elixir: "~> 1.0",
-     deps: deps]
+     deps: deps, 
+     package: package,
+     description: description,
+     docs: [readme: "README.md", main: "README"]]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:phoenix, :ecto, :timex, :plug_auth]]
   end
 
-  # Dependencies can be Hex packages:
-  #
-  #   {:mydep, "~> 0.3.0"}
-  #
-  # Or git/path repositories:
-  #
-  #   {:mydep, git: "https://github.com/elixir-lang/mydep.git", tag: "0.1.0"}
-  #
-  # Type `mix help deps` for more examples and options
   defp deps do
     [
       {:phoenix, github: "phoenixframework/phoenix"},
       {:ecto, github: "elixir-lang/ecto"},
       {:timex, "~> 0.13.2"},
-      {:plug_auth, ">= 0.0.0"},
+      {:plug_auth, ">= 0.0.0"},     
+      {:earmark, "~> 0.1", only: :docs},
+      {:ex_doc, "~> 0.6", only: :docs}
     ]
+  end
+
+  defp description do
+    "A glue keeping Phoenix and Ecto together"
+  end
+
+  defp package do
+    [contributors: ["Michele Balistreri"],
+     licenses: ["ISC"],
+     links: %{"GitHub" => "https://github.com/briksoftware/crudex"}]
   end
 end
