@@ -17,8 +17,8 @@ defmodule Crudex.Model do
 
   defmacro crudex_schema(schema_name, do: block) do
     quote do
-      @primary_key {:id, Crudex.JSONUUID, []}
-      @foreign_key_type Crudex.JSONUUID
+      @primary_key {:id, Ecto.UUID, []}
+      @foreign_key_type Ecto.UUID
       @timestamps_type Crudex.JSONDateTime
       schema unquote(schema_name) do
         unquote(block)
@@ -90,7 +90,6 @@ defmodule Crudex.Model do
   
   defp encode_field(_, nil), do: nil
   defp encode_field(Crudex.JSONDateTime, field_val), do: Crudex.JSONDateTime.encode(field_val)
-  defp encode_field(Crudex.JSONUUID, field_val), do: Crudex.JSONUUID.encode(field_val)
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val
 

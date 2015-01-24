@@ -40,9 +40,8 @@ defmodule Crudex.CrudController do
 
   def do_show(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
     assocs = module.__schema__(:associations) |> Enum.filter(&filter_assoc(&1, module))
-    decoded_id = Crudex.JSONUUID.cast!(data_id)
 
-    case from(r in module, where: r.id == ^decoded_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
+    case from(r in module, where: r.id == ^data_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
       data -> data |> Crudex.Model.resolve_virtuals_recursively(module, assocs) |> send_data(conn)
     end 
@@ -50,9 +49,8 @@ defmodule Crudex.CrudController do
   def do_show(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
   def do_update(conn, repo, module, user_scoped, %{"id" => data_id, "data" => updated_fields}) when not is_nil(data_id) do
-    decoded_id = Crudex.JSONUUID.cast!(data_id)
     sanitized_fields = sanitize(updated_fields, user_scoped)
-    case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.one do
+    case from(r in module, where: r.id == ^data_id) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
       data -> data |> module.changeset(sanitized_fields) |> _update_data(conn, repo)
     end
@@ -61,8 +59,7 @@ defmodule Crudex.CrudController do
   def do_update(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :bad_request, %{message: "bad request"})
 
   def do_delete(conn, repo, module, user_scoped, %{"id" => data_id}) when not is_nil(data_id) do
-    decoded_id = Crudex.JSONUUID.cast!(data_id)
-    case from(r in module, where: r.id == ^decoded_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
+    case from(r in module, where: r.id == ^data_id) |> apply_scope(conn, user_scoped) |> repo.delete_all do
       1 -> json conn, %{status: "ok"}
       0 -> send_error(conn, :not_found, %{message: "not found"})
     end
@@ -98,14 +95,14 @@ defmodule Crudex.CrudController do
     module.__schema__(:association, field).__struct__ != Ecto.Associations.BelongsTo
   end
 
-  defp get_user_id(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id)
+  def get_authenticated_user(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id) |> Ecto.UUID.cast |> elem(1)
 
-  defp add_user_id(data, conn, true), do: Map.put(data, "user_id", get_user_id(conn))
+  defp add_user_id(data, conn, true), do: Map.put(data, "user_id", get_authenticated_user(conn))
   defp add_user_id(data, _conn, false), do: data
 
   defp apply_scope(query, _conn, false), do: query
   defp apply_scope(query, conn, true) do
-    user_id = get_user_id(conn)
+    user_id = get_authenticated_user(conn)
     from(r in query, where: r.user_id == ^user_id)
   end
 

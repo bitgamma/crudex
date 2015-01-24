@@ -49,14 +49,14 @@ defmodule Crudex.UserController do
   def do_sign_in(false, conn, _user), do: Crudex.CrudController.send_error(conn, :unauthorized, %{message: "unauthorized"})
 
   def get_user_id(%Plug.Conn{assigns: %{authenticated_user: %{role: "admin"}}}, %{"id" => data_id}), do: data_id
-  def get_user_id(conn, %{"id" => "current"}), do: get_authenticated_user(conn)
+  def get_user_id(conn, %{"id" => "current"}), do: Crudex.CrudController.get_authenticated_user(conn)
   def get_user_id(conn, %{"id" => data_id}) do
-    case get_authenticated_user(conn) do
+    case Crudex.CrudController.get_authenticated_user(conn) do
       ^data_id -> data_id
       _ -> nil
     end
   end
-  def get_user_id(conn, _params), do: get_authenticated_user(conn)
+  def get_user_id(conn, _params), do: Crudex.CrudController.get_authenticated_user(conn)
 
   def verify_secret(salt, key, password) do
     Plug.Crypto.KeyGenerator.generate(password, salt)
@@ -85,6 +85,4 @@ defmodule Crudex.UserController do
     salt = :crypto.strong_rand_bytes(32)
     {salt, Plug.Crypto.KeyGenerator.generate(password, salt)}
   end
-
-  defp get_authenticated_user(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id) |> Crudex.JSONUUID.encode
 end
