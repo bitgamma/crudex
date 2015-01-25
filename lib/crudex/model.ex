@@ -19,7 +19,6 @@ defmodule Crudex.Model do
     quote do
       @primary_key {:id, Ecto.UUID, []}
       @foreign_key_type Ecto.UUID
-      @timestamps_type Crudex.JSONDateTime
       schema unquote(schema_name) do
         unquote(block)
         timestamps inserted_at: :created_at
@@ -89,7 +88,7 @@ defmodule Crudex.Model do
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
   
   defp encode_field(_, nil), do: nil
-  defp encode_field(Crudex.JSONDateTime, field_val), do: Crudex.JSONDateTime.encode(field_val)
+  defp encode_field(Ecto.DateTime, field_val), do: Ecto.DateTime.to_string(field_val)
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val
 

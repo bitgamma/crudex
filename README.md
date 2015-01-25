@@ -17,7 +17,7 @@ defmodule MyModel do
 end
 ```
 
-You make your model JSON-encodable using Poison. You should also use `Ecto.UUID`, `Crudex.JSONBinary`, `Crudex.JSONDateTime` instead of `:uuid`, `:binary`, and `:datetime` in your model respectively.
+You make your model JSON-encodable using Poison. You should also use `Ecto.UUID`, `Crudex.JSONBinary`, `Ecto.DateTime` instead of `:uuid`, `:binary`, and `:datetime` in your model respectively.
 
 The Crudex.Model also provides the following macros:
 
