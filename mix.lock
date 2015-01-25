@@ -2,7 +2,7 @@
   "cowlib": {:hex, :cowlib, "1.0.1"},
   "decimal": {:hex, :decimal, "1.1.0"},
   "earmark": {:hex, :earmark, "0.1.12"},
-  "ecto": {:git, "git://github.com/elixir-lang/ecto.git", "ad96bb9c43697a571dca93f42cc2acc8c13547cf", []},
+  "ecto": {:git, "git://github.com/elixir-lang/ecto.git", "3291983ba16e13b7691afaf7d685047db162ebdc", []},
   "ex_doc": {:hex, :ex_doc, "0.7.0"},
   "phoenix": {:git, "git://github.com/phoenixframework/phoenix.git", "c2bac8138b11065a5224cb79d2ef397e917f562c", []},
   "plug": {:hex, :plug, "0.10.0"},

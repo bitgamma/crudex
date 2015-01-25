@@ -12,14 +12,13 @@ defmodule Crudex.Mixfile do
   end
 
   def application do
-    [applications: [:phoenix, :ecto, :timex, :plug_auth]]
+    [applications: [:phoenix, :ecto, :plug_auth]]
   end
 
   defp deps do
     [
       {:phoenix, github: "phoenixframework/phoenix"},
       {:ecto, github: "elixir-lang/ecto"},
-      {:timex, "~> 0.13.2"},
       {:plug_auth, ">= 0.0.0"},     
       {:earmark, "~> 0.1", only: :docs},
       {:ex_doc, "~> 0.6", only: :docs}
