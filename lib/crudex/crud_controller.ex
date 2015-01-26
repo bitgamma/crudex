@@ -52,7 +52,7 @@ defmodule Crudex.CrudController do
     sanitized_fields = sanitize(updated_fields, user_scoped)
     case from(r in module, where: r.id == ^data_id) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
-      data -> data |> module.changeset(sanitized_fields) |> _update_data(conn, repo)
+      data -> data |> module.changeset(sanitized_fields) |> _update_data(module, conn, repo)
     end
   end
   def do_update(conn, _repo, _module, _user_scoped, %{"data" => _updated_fields}), do: send_error(conn, :not_found, %{message: "not found"})
@@ -80,7 +80,7 @@ defmodule Crudex.CrudController do
     apply_scope(query, conn, true)
   end
 
-  defp _update_data(changeset, conn, repo) do
+  defp _update_data(changeset, module, conn, repo) do
     case changeset.valid? do
       true -> changeset |> repo.update |> Crudex.Model.resolve_virtuals(module) |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
