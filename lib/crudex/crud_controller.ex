@@ -82,7 +82,7 @@ defmodule Crudex.CrudController do
 
   defp _update_data(changeset, conn, repo) do
     case changeset.valid? do
-      true -> changeset |> repo.update |> send_data(conn)
+      true -> changeset |> repo.update |> Crudex.Model.resolve_virtuals(module) |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end    
   end
