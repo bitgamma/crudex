@@ -32,7 +32,7 @@ defmodule Crudex.CrudController do
     changeset = module.changeset(struct(module), add_user_id(data, conn, user_scoped))
 
     case changeset.valid? do
-      true -> changeset |> repo.insert |> send_data(conn)
+      true -> changeset |> repo.insert |> Crudex.Model.resolve_virtuals(module) |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end
   end
