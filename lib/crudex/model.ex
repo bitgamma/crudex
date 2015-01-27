@@ -4,9 +4,8 @@ defmodule Crudex.Model do
   defmacro __using__(_) do
     quote do
       use Ecto.Model
-      import Crudex.Model, only: [crudex_schema: 2, virtual_field: 2, hidden_field: 2]
+      import Crudex.Model, only: [crudex_schema: 2, hidden_field: 2]
 
-      Module.register_attribute __MODULE__, :crudex_virtuals, accumulate: true, persist: false
       Module.register_attribute __MODULE__, :crudex_hidden, accumulate: true, persist: false
 
       defimpl Poison.Encoder, for: __MODULE__ do
@@ -24,20 +23,9 @@ defmodule Crudex.Model do
         timestamps inserted_at: :created_at
       end
 
-      def __crudex_virtuals__(:fields) do
-        @crudex_virtuals
-      end
-
       def __crudex_hidden__ do
         @crudex_hidden
       end
-    end
-  end
-
-  defmacro virtual_field(name, type) do
-    quote do
-      Module.put_attribute __MODULE__, :crudex_virtuals, {unquote(name), unquote(type)}
-      field unquote(name), unquote(type), virtual: true
     end
   end
 
@@ -60,22 +48,6 @@ defmodule Crudex.Model do
   def filter_hidden(model, module) do
     Enum.reduce(module.__crudex_hidden__, model, &Map.delete(&2, &1))
   end
-
-  def resolve_virtuals_recursively(model, module, assocs) do
-    model = resolve_virtuals(model, module)
-    Enum.reduce(assocs, model, &resolve_for_association(&1, &2, module))
-  end
-
-  defp resolve_for_association(assoc, model, module) do
-    Map.put(model, assoc, resolve_all_virtuals(Map.get(model, assoc), module))
-  end
-
-  def resolve_all_virtuals(models, module) do
-    for model <- models, do: resolve_virtuals(model, module) 
-  end
-
-  def resolve_virtuals(model, module), do: Enum.reduce(module.__crudex_virtuals__(:fields), model, &resolve_virtual(&1, &2, module))
-  defp resolve_virtual({field, _type}, model, module), do: Map.put(model, field, module.__crudex_virtuals__(:resolve, field, model))
 
   ## Implementation
   defp encode_model_associations(model, module) do

@@ -22,7 +22,6 @@ You make your model JSON-encodable using Poison. You should also use `Ecto.UUID`
 The Crudex.Model also provides the following macros:
 
 * `crudex_schema` => is like `schema` from Ecto.Model but defines ID/foreign keys to be UUID and creates timestamps. You should use this if you want to use the CRUD controller functionalities. It also allows using the two macros below
-* `virtual_field` => creates a virtual field, which value will be resolved during encoding, by invoking a callback.
 * `hidden_field` => creates a regular field which will be excluded when encoding
 
 ### Example
@@ -33,15 +32,12 @@ defmodule Example.User do
   crudex_schema "users" do 
     field :name, :string   
     field :surname, :string   
-    virtual_field :full_name, :string
     field :email, :string
     hidden_field :salt, Crudex.JSONBinary
     hidden_field :password, Crudex.JSONBinary
     field :role, :string
   end
-  
-  def __crudex_virtuals__(:resolve, :full_name, %{name: name, surname: surname}), do: name <> " " <> surname
-  
+    
   ...
 end
 ```

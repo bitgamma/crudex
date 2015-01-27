@@ -25,14 +25,14 @@ defmodule Crudex.CrudController do
   end
 
   def do_index(conn, repo, module, user_scoped, _) do
-    json conn, module |> apply_scope(conn, user_scoped) |> repo.all |> Crudex.Model.resolve_all_virtuals(module)
+    json conn, module |> apply_scope(conn, user_scoped) |> repo.all
   end
 
   def do_create(conn, repo, module, user_scoped, %{"data" => data}) do
     changeset = module.changeset(struct(module), add_user_id(data, conn, user_scoped))
 
     case changeset.valid? do
-      true -> changeset |> repo.insert |> Crudex.Model.resolve_virtuals(module) |> send_data(conn)
+      true -> changeset |> repo.insert |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end
   end
@@ -43,7 +43,7 @@ defmodule Crudex.CrudController do
 
     case from(r in module, where: r.id == ^data_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
-      data -> data |> Crudex.Model.resolve_virtuals_recursively(module, assocs) |> send_data(conn)
+      data -> data |> send_data(conn)
     end 
   end
   def do_show(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
@@ -52,7 +52,7 @@ defmodule Crudex.CrudController do
     sanitized_fields = sanitize(updated_fields, user_scoped)
     case from(r in module, where: r.id == ^data_id) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
-      data -> data |> module.changeset(sanitized_fields) |> _update_data(module, conn, repo)
+      data -> data |> module.changeset(sanitized_fields) |> _update_data(conn, repo)
     end
   end
   def do_update(conn, _repo, _module, _user_scoped, %{"data" => _updated_fields}), do: send_error(conn, :not_found, %{message: "not found"})
@@ -80,9 +80,9 @@ defmodule Crudex.CrudController do
     apply_scope(query, conn, true)
   end
 
-  defp _update_data(changeset, module, conn, repo) do
+  defp _update_data(changeset, conn, repo) do
     case changeset.valid? do
-      true -> changeset |> repo.update |> Crudex.Model.resolve_virtuals(module) |> send_data(conn)
+      true -> changeset |> repo.update |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
     end    
   end
