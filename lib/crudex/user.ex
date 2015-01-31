@@ -13,6 +13,6 @@ defmodule Crudex.User do
     params
     |> cast(user, ~w(email salt password role), ~w(display_name id created_at updated_at))
     |> validate_format(:email, ~r/@/)
-    |> validate_unique(:email)
+    |> update_change(:email, &String.downcase/1)
   end
 end
