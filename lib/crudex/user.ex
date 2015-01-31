@@ -1,18 +1,22 @@
 defmodule Crudex.User do
   use Crudex.Model
 
-  crudex_schema "users" do 
-    field :display_name, :string   
-    field :email, :string
-    hidden_field :salt, Crudex.JSONBinary
-    hidden_field :password, Crudex.JSONBinary
-    field :role, :string
+  defmacro __using__(_) do
+    quote do
+      use Crudex.Model
+      import Crudex.User, only: [user_schema: 2]
+    end
   end
 
-  def changeset(user, params) do
-    params
-    |> cast(user, ~w(email salt password role), ~w(display_name id created_at updated_at))
-    |> validate_format(:email, ~r/@/)
-    |> update_change(:email, &String.downcase/1)
+  defmacro user_schema(name, do: block) do
+    quote do
+      crudex_schema unquote(name) do
+        field :email, :string
+        hidden_field :salt, Crudex.JSONBinary
+        hidden_field :password, Crudex.JSONBinary
+        field :role, :string
+        unquote(block)       
+      end
+    end
   end
 end
