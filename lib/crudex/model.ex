@@ -40,6 +40,7 @@ defmodule Crudex.Model do
   def encode(model, module) do
     model
     |> Map.from_struct
+    |> Map.delete(:__state__)
     |> filter_hidden(module)
     |> encode_model_associations(module)
     |> encode_fields(module)
