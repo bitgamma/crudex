@@ -1,5 +1,5 @@
 defmodule Crudex.Model do
-  
+
   ## Macros
   defmacro __using__(_) do
     quote do
@@ -16,7 +16,7 @@ defmodule Crudex.Model do
 
   defmacro crudex_schema(schema_name, do: block) do
     quote do
-      @primary_key {:id, Ecto.UUID, []}
+      @primary_key {:id, Ecto.UUID, [read_after_writes: true]}
       @foreign_key_type Ecto.UUID
       schema unquote(schema_name) do
         unquote(block)
@@ -58,7 +58,7 @@ defmodule Crudex.Model do
   end
 
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
-  
+
   defp encode_field(_, nil), do: nil
   defp encode_field(Ecto.DateTime, field_val), do: Ecto.DateTime.to_string(field_val)
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
