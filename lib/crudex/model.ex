@@ -65,7 +65,7 @@ defmodule Crudex.Model do
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val
 
-  defp fetch_association(%Ecto.Associations.NotLoaded{}), do: nil
+  defp fetch_association(%Ecto.Association.NotLoaded{}), do: nil
   defp fetch_association(assoc), do: assoc
 
   ## Utils

@@ -5,8 +5,8 @@ defmodule Crudex.CrudController do
   defmacro __using__(_) do
     quote do
       use Phoenix.Controller
-      import Crudex.CrudController, only: [crud_for: 1, crud_for: 2, defcrud: 2, send_error: 3]  
-      @user_scoped false    
+      import Crudex.CrudController, only: [crud_for: 1, crud_for: 2, defcrud: 2, send_error: 3]
+      @user_scoped false
     end
   end
 
@@ -14,7 +14,7 @@ defmodule Crudex.CrudController do
     implementation = String.to_existing_atom("do_#{action}")
 
     quote do
-      def unquote(action)(conn, params) do 
+      def unquote(action)(conn, params) do
         apply(Crudex.CrudController, unquote(implementation), [conn, @ecto_repo, unquote(module), @user_scoped, params])
       end
     end
@@ -44,7 +44,7 @@ defmodule Crudex.CrudController do
     case from(r in module, where: r.id == ^data_id, preload: ^assocs) |> apply_scope(conn, user_scoped) |> repo.one do
       nil -> send_error(conn, :not_found, %{message: "not found"})
       data -> data |> send_data(conn)
-    end 
+    end
   end
   def do_show(conn, _repo, _module, _user_scoped, _params), do: send_error(conn, :not_found, %{message: "not found"})
 
@@ -69,12 +69,12 @@ defmodule Crudex.CrudController do
   def send_error(conn, status, errors) do
     conn
     |> put_status(status)
-    |> json %{errors: errors}    
+    |> json %{errors: errors}
   end
 
   def send_data(data, conn) do
     json conn, %{data: data}
-  end 
+  end
 
   def apply_user_scope(query, conn) do
     apply_scope(query, conn, true)
@@ -84,7 +84,7 @@ defmodule Crudex.CrudController do
     case changeset.valid? do
       true -> changeset |> repo.update |> send_data(conn)
       false -> send_error(conn, :bad_request, format_errors(changeset.errors))
-    end    
+    end
   end
 
   defp sanitize(data, user_scoped), do: data |> Map.delete("id") |> delete_user_info(user_scoped)
@@ -92,7 +92,7 @@ defmodule Crudex.CrudController do
   defp delete_user_info(data, false), do: data
 
   defp filter_assoc(field, module) do
-    module.__schema__(:association, field).__struct__ != Ecto.Associations.BelongsTo
+    module.__schema__(:association, field).__struct__ != Ecto.Association.BelongsTo
   end
 
   def get_authenticated_user(conn), do: PlugAuth.Authentication.Utils.get_authenticated_user(conn) |> Map.get(:id) |> Ecto.UUID.cast |> elem(1)
