@@ -61,7 +61,7 @@ defmodule Crudex.Model do
   defp encode_fields(model, module), do: reduce_on_existing_fields(model, module, &encode_field/2)
 
   defp encode_field(_, nil), do: nil
-  defp encode_field(Ecto.DateTime, field_val), do: Ecto.DateTime.to_string(field_val)
+  defp encode_field(Ecto.DateTime, field_val), do: Ecto.DateTime.to_iso8601(field_val)
   defp encode_field(Crudex.JSONBinary, field_val), do: Crudex.JSONBinary.encode(field_val)
   defp encode_field(_type, field_val), do: field_val
 
